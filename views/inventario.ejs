@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= titulo %> | ProyectoGit</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet" />
+  <link href="/css/estilos.css" rel="stylesheet" />
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+  <%- include('partials/navbar') %>
+
+  <main class="container my-4 flex-grow-1">
+    <div class="d-flex align-items-center mb-4">
+      <i class="bi bi-archive fs-2 text-primary me-3"></i>
+      <div>
+        <h2 class="mb-0 fw-bold">Inventario</h2>
+        <p class="text-muted mb-0 small">Lista completa de productos registrados</p>
+      </div>
+      <a href="/scanner" class="btn btn-primary ms-auto">
+        <i class="bi bi-upc-scan me-2"></i>Ir al Scanner
+      </a>
+    </div>
+
+    <% if (productos.length === 0) { %>
+      <div class="alert alert-info text-center py-4">
+        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+        No hay productos registrados. Agrega productos usando la API.
+      </div>
+    <% } else { %>
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Nombre</th>
+                  <th>Categoría</th>
+                  <th>Código de Barra</th>
+                  <th class="text-end">Precio</th>
+                  <th class="text-center">Stock</th>
+                  <th class="text-center">Acción</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% productos.forEach((p, i) => { %>
+                <tr>
+                  <td class="text-muted small"><%= i + 1 %></td>
+                  <td>
+                    <span class="fw-semibold"><%= p.nombre %></span>
+                    <% if (p.descripcion) { %>
+                      <br><small class="text-muted"><%= p.descripcion %></small>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (p.categoria) { %>
+                      <span class="badge bg-secondary"><%= p.categoria %></span>
+                    <% } else { %>
+                      <span class="text-muted">—</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <% if (p.codigo_barra) { %>
+                      <span class="font-monospace small"><%= p.codigo_barra %></span>
+                    <% } else { %>
+                      <span class="text-muted small">Sin código</span>
+                    <% } %>
+                  </td>
+                  <td class="text-end fw-semibold text-success">$<%= parseFloat(p.precio).toFixed(2) %></td>
+                  <td class="text-center">
+                    <span class="badge <%= p.stock > 10 ? 'bg-success' : p.stock > 0 ? 'bg-warning text-dark' : 'bg-danger' %>">
+                      <%= p.stock %>
+                    </span>
+                  </td>
+                  <td class="text-center">
+                    <% if (p.codigo_barra) { %>
+                      <a href="/scanner" class="btn btn-sm btn-outline-primary" title="Escanear este producto">
+                        <i class="bi bi-upc-scan"></i>
+                      </a>
+                    <% } %>
+                  </td>
+                </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card-footer bg-white text-muted small">
+          Total: <strong><%= productos.length %></strong> producto(s)
+        </div>
+      </div>
+    <% } %>
+  </main>
+
+  <%- include('partials/footer') %>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
