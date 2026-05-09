@@ -49,7 +49,14 @@
     return '$' + parseFloat(valor).toFixed(2);
   }
 
-  function setStatus(tipo, mensaje) {
+  /** Escapa caracteres HTML para evitar XSS al insertar texto de usuario en innerHTML. */
+  function escaparHTML(texto) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(String(texto)));
+    return div.innerHTML;
+  }
+
+  function setStatus(tipo, mensajeSafe) {
     const iconos = {
       info:    'bi-info-circle-fill',
       success: 'bi-check-circle-fill',
@@ -58,7 +65,14 @@
     };
     const icono = iconos[tipo] || iconos.info;
     scannerStatus.className = `alert alert-${tipo} d-flex align-items-center mb-3`;
-    scannerStatus.innerHTML = `<i class="bi ${icono} me-2"></i><span>${mensaje}</span>`;
+    // mensajeSafe puede contener <strong> con texto ya escapado; se construye por partes
+    const icEl = document.createElement('i');
+    icEl.className = `bi ${icono} me-2`;
+    const spanEl = document.createElement('span');
+    spanEl.innerHTML = mensajeSafe; // construido internamente, no directo del usuario
+    scannerStatus.innerHTML = '';
+    scannerStatus.appendChild(icEl);
+    scannerStatus.appendChild(spanEl);
   }
 
   function mostrarLoader(visible) {
@@ -78,7 +92,7 @@
 
     ocultarResultados();
     mostrarLoader(true);
-    setStatus('info', `Buscando código: <strong>${codigo}</strong>…`);
+    setStatus('info', `Buscando código: <strong>${escaparHTML(codigo)}</strong>…`);
 
     try {
       const resp = await fetch(`/api/productos/barcode/${encodeURIComponent(codigo)}`);
@@ -120,7 +134,7 @@
     resultadoProducto.classList.remove('d-none');
     resultadoError.classList.add('d-none');
 
-    setStatus('success', `Producto encontrado: <strong>${producto.nombre}</strong>`);
+    setStatus('success', `Producto encontrado: <strong>${escaparHTML(producto.nombre)}</strong>`);
 
     // Devolver foco al input para el próximo escaneo
     barcodeInput.value = '';
@@ -135,7 +149,7 @@
     resultadoError.classList.remove('d-none');
     resultadoProducto.classList.add('d-none');
 
-    setStatus('danger', `No se encontró ningún producto con el código <strong>${codigo}</strong>.`);
+    setStatus('danger', `No se encontró ningún producto con el código <strong>${escaparHTML(codigo)}</strong>.`);
 
     barcodeInput.value = '';
     barcodeInput.focus();
@@ -162,11 +176,12 @@
     }
 
     // Timer de detección de pausa (útil si el scanner no envía Enter)
+    // Si no hay más entrada en SCANNER_DELAY_MS ms y el código tiene al menos 4 caracteres,
+    // se dispara la búsqueda automáticamente.
     scannerTimer = setTimeout(function () {
       const codigo = barcodeInput.value.trim();
       if (codigo.length >= 4) {
-        // Solo activar si parece un código de barra (largo suficiente)
-        // y no hay más entrada en los últimos SCANNER_DELAY_MS ms
+        buscarProducto(codigo);
       }
     }, SCANNER_DELAY_MS);
   });
@@ -219,7 +234,7 @@
     }
 
     renderizarCarrito();
-    setStatus('success', `<strong>${cantidad}x ${productoActual.nombre}</strong> agregado al carrito.`);
+    setStatus('success', `<strong>${escaparHTML(cantidad + 'x ' + productoActual.nombre)}</strong> agregado al carrito.`);
   });
 
   btnVaciarCarrito.addEventListener('click', function () {
@@ -239,17 +254,17 @@
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>
-          <span class="fw-semibold">${item.producto.nombre}</span>
-          <br><small class="text-muted font-monospace">${item.producto.codigo_barra || ''}</small>
+          <span class="fw-semibold">${escaparHTML(item.producto.nombre)}</span>
+          <br><small class="text-muted font-monospace">${escaparHTML(item.producto.codigo_barra || '')}</small>
         </td>
         <td class="text-center">
           <input type="number" class="form-control form-control-sm text-center carrito-cantidad"
-            value="${item.cantidad}" min="1" data-index="${index}" style="width:70px;margin:auto;">
+            value="${escaparHTML(item.cantidad)}" min="1" data-index="${escaparHTML(index)}" style="width:70px;margin:auto;">
         </td>
         <td class="text-end">${formatearPrecio(item.producto.precio)}</td>
         <td class="text-end fw-semibold text-success">${formatearPrecio(subtotal)}</td>
         <td class="text-center">
-          <button class="btn btn-sm btn-outline-danger btn-eliminar-item" data-index="${index}" title="Eliminar">
+          <button class="btn btn-sm btn-outline-danger btn-eliminar-item" data-index="${escaparHTML(index)}" title="Eliminar">
             <i class="bi bi-trash"></i>
           </button>
         </td>
